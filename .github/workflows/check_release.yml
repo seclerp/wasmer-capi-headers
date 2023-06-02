@@ -1,0 +1,55 @@
+name: Check Release
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 * * * *'  # runs every hour
+
+jobs:
+  check-release:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+      with:
+        ref: 'releases-check'  # This is a branch that stores the latest release state
+
+    - name: Install jq
+      run: sudo apt-get install jq
+
+    - name: Check for new release
+      id: check
+      run: |
+        curl -H "Accept: application/vnd.github.v3+json" https://api.github.com/repos/wasmerio/wasmer/releases/latest > latest_release.json
+        echo "::set-output name=tag::$(jq -r '.tag_name' latest_release.json)"
+      shell: bash
+
+    - name: Compare releases
+      id: compare
+      run: |
+        if [ ! -f previous_release.json ]; then
+          echo "No previous release info found. Initializing..."
+          cp latest_release.json previous_release.json
+        fi
+        PREVIOUS_RELEASE_TAG=$(jq -r '.tag_name' previous_release.json)
+        CURRENT_RELEASE_TAG=$(jq -r '.tag_name' latest_release.json)
+        if [ "$PREVIOUS_RELEASE_TAG" != "$CURRENT_RELEASE_TAG" ]; then
+          echo "::set-output name=new_release::true"
+          cp latest_release.json previous_release.json
+        else
+          echo "::set-output name=new_release::false"
+        fi
+      shell: bash
+
+    - name: Run if new release
+      if: steps.compare.outputs.new_release == 'true'
+      run: |
+        # do something if a new release was found
+
+    - name: Commit changes
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git commit -am "Update release info"
+        git push
+      shell: bash
