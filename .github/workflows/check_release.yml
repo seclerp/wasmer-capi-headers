@@ -74,4 +74,5 @@ jobs:
       with:
         default_author: user_info
         commit: --amend
+        push: --force
         message: 'Update release info'
