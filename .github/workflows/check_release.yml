@@ -47,8 +47,8 @@ jobs:
       if: steps.compare.outputs.new_release == 'true'
       uses: actions/checkout@v2
       with:
-        repository: <other-owner>/<other-repo>
-        ref: <branch>
+        repository: wasmerio/wasmer
+        ref: ${{ steps.check.outputs.tag }}
         path: wasmer-sources
 
     - name: Install Rust and Build Crate
