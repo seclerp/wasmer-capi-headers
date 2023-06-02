@@ -57,14 +57,12 @@ jobs:
         curl https://sh.rustup.rs -sSf | sh -s -- -y
         source $HOME/.cargo/env
         cd wasmer-sources
-        make build-capi
-        make package-capi
+        cargo check
 
     - name: Test
       if: steps.compare.outputs.new_release == 'true'
       run: |
-        ls -a wasmer-sources/package/include
-        ls -a wasmer-sources/package/lib
+        ls -a wasmer-sources/lib/c-api/
 
 
 #     - name: Create Release
