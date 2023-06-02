@@ -63,7 +63,7 @@ jobs:
     - name: Upload headers
       uses: ncipollo/release-action@v1
       with:
-        artifacts: "package/include/*.h"
+        artifacts: "wasmer-sources/package/include/*.h"
         commit: ${{ github.sha }}
         tag: ${{ steps.check.outputs.tag }}
 
