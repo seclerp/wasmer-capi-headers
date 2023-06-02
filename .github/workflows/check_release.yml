@@ -39,20 +39,56 @@ jobs:
           echo "::set-output name=new_release::true"
           cp latest_release.json previous_release.json
         else
-          echo "::set-output name=new_release::false"
+          echo "::set-output name=new_release::true"
         fi
       shell: bash
 
-    - name: Run if new release
+    - name: Checkout remote repository
+      if: steps.compare.outputs.new_release == 'true'
+      uses: actions/checkout@v2
+      with:
+        repository: <other-owner>/<other-repo>
+        ref: <branch>
+        path: wasmer-sources
+
+    - name: Install Rust and Build Crate
       if: steps.compare.outputs.new_release == 'true'
       run: |
-        # do something if a new release was found
+        curl https://sh.rustup.rs -sSf | sh -s -- -y
+        source $HOME/.cargo/env
+        cargo install <crate>
+        cd wasmer-sources
+        make package-capi
+        ls -a packages
 
-    - name: Commit changes
-      run: |
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"
-        git add .
-        git commit -am "Update release info"
-        git push
-      shell: bash
+#     - name: Create Release
+#       id: create_release
+#       uses: actions/create-release@v1
+#       if: steps.compare.outputs.new_release == 'true'
+#       env:
+#         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#       with:
+#         tag_name: ${{ steps.check.outputs.tag }}
+#         release_name: Release ${{ steps.check.outputs.tag }}
+#         draft: false
+#         prerelease: false
+
+#     - name: Upload Release Asset
+#       uses: actions/upload-release-asset@v1
+#       if: steps.compare.outputs.new_release == 'true'
+#       env:
+#         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#       with:
+#         upload_url: ${{ steps.create_release.outputs.upload_url }}
+#         asset_path: ./target/release/<files>
+#         asset_name: wasmer-sources/*.h
+#         asset_content_type: application/octet-stream
+
+#     - name: Commit changes
+#       run: |
+#         git config --local user.email "action@github.com"
+#         git config --local user.name "GitHub Action"
+#         git add .
+#         git commit -am "Update release info"
+#         git push
+#       shell: bash
