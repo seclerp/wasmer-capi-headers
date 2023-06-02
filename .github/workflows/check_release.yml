@@ -39,7 +39,7 @@ jobs:
           echo "::set-output name=new_release::true"
           cp latest_release.json previous_release.json
         else
-          echo "::set-output name=new_release::true"
+          echo "::set-output name=new_release::false"
         fi
       shell: bash
 
@@ -67,11 +67,11 @@ jobs:
         commit: ${{ github.sha }}
         tag: ${{ steps.check.outputs.tag }}
 
-#     - name: Commit changes
-#       run: |
-#         git config --local user.email "action@github.com"
-#         git config --local user.name "GitHub Action"
-#         git add .
-#         git commit -am "Update release info"
-#         git push
-#       shell: bash
+    - name: Commit changes
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add .
+        git commit -am "Update release info"
+        git push
+      shell: bash
