@@ -70,10 +70,8 @@ jobs:
         skipIfReleaseExists: true
 
     - name: Commit changes
-      run: |
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"
-        git add .
-        git commit -am "Update release info"
-        git push
-      shell: bash
+      uses: EndBug/add-and-commit@v9 # You can change this to use a specific version.
+      with:
+        default_author: user_info
+        commit: --amend
+        message: 'Update release info'
