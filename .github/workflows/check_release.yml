@@ -61,11 +61,13 @@ jobs:
         make package-capi
 
     - name: Upload headers
+      if: steps.compare.outputs.new_release == 'true'
       uses: ncipollo/release-action@v1
       with:
         artifacts: "wasmer-sources/package/include/*.h"
         commit: ${{ github.sha }}
         tag: ${{ steps.check.outputs.tag }}
+        skipIfReleaseExists: true
 
     - name: Commit changes
       run: |
