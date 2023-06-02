@@ -60,13 +60,16 @@ jobs:
         make build-capi
         make package-capi
 
-    - uses: rickstaa/action-create-tag@v1
+    - name: Create release
+      uses: rickstaa/action-create-tag@v1
+      if: steps.compare.outputs.new_release == 'true'
       with:
         tag: ${{ steps.check.outputs.tag }}
         tag_exists_error: false
         message: "Latest release"
 
-    - uses: ncipollo/release-action@v1
+    - name: Upload headers
+      uses: ncipollo/release-action@v1
       with:
         artifacts: "package/include/*.h"
         tag: ${{ steps.check.outputs.tag }}
