@@ -65,6 +65,7 @@ jobs:
       if: steps.compare.outputs.new_release == 'true'
       with:
         tag: ${{ steps.check.outputs.tag }}
+        commit: ${{ github.sha }}
         tag_exists_error: false
         message: "Latest release"
 
