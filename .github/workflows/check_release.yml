@@ -27,14 +27,14 @@ jobs:
           echo "::set-output name=new_release::false"
         fi
 
-    - name: Fetch wasmerio source code
+    - name: Fetch wasmer source code
       if: steps.latest_version.outputs.new_release == 'true'
       run: |
         git clone https://github.com/wasmerio/wasmer.git wasmer-sources
 
     - name: Install Rust
       if: steps.latest_version.outputs.new_release == 'true'
-      name:run: |
+      run: |
         curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 
     - name: Generate CAPI
