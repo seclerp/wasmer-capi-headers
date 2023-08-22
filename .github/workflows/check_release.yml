@@ -5,74 +5,50 @@ permissions:
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 * * * *'  # runs every hour
+    - cron: '0 * * * *'
 
 jobs:
   check-release:
     runs-on: ubuntu-latest
+
     steps:
-    - name: Checkout
+    - name: Checkout repository
       uses: actions/checkout@v2
-      with:
-        ref: 'releases-check'  # This is a branch that stores the latest release state
 
-    - name: Install jq
-      run: sudo apt-get install jq
-
-    - name: Check for new release
-      id: check
+    - name: Check if there is a new release
+      id: latest_version
       run: |
-        curl -H "Accept: application/vnd.github.v3+json" https://api.github.com/repos/wasmerio/wasmer/releases/latest > latest_release.json
-        echo "::set-output name=tag::$(jq -r '.tag_name' latest_release.json)"
-      shell: bash
-
-    - name: Compare releases
-      id: compare
-      run: |
-        if [ ! -f previous_release.json ]; then
-          echo "No previous release info found. Initializing..."
-          cp latest_release.json previous_release.json
-        fi
-        PREVIOUS_RELEASE_TAG=$(jq -r '.tag_name' previous_release.json)
-        CURRENT_RELEASE_TAG=$(jq -r '.tag_name' latest_release.json)
-        if [ "$PREVIOUS_RELEASE_TAG" != "$CURRENT_RELEASE_TAG" ]; then
+        LATEST_VERSION=$(curl --silent "https://api.github.com/repos/wasmerio/wasmer/releases/latest" | jq -r .tag_name)
+        echo "::set-output name=version::$LATEST_VERSION"
+        if git tag | grep -q "v$LATEST_VERSION$"; then
+          echo "We have already released this version. Exiting..."
           echo "::set-output name=new_release::true"
-          cp latest_release.json previous_release.json
         else
           echo "::set-output name=new_release::false"
         fi
-      shell: bash
 
-    - name: Checkout remote repository
-      if: steps.compare.outputs.new_release == 'true'
-      uses: actions/checkout@v2
-      with:
-        repository: wasmerio/wasmer
-        ref: ${{ steps.check.outputs.tag }}
-        path: wasmer-sources
-
-    - name: Install Rust and Build Crate
-      if: steps.compare.outputs.new_release == 'true'
+    - name: Fetch wasmerio source code
+      if: steps.latest_version.outputs.new_release == 'true'
       run: |
-        curl https://sh.rustup.rs -sSf | sh -s -- -y
-        source $HOME/.cargo/env
+        git clone https://github.com/wasmerio/wasmer.git wasmer-sources
+
+    - name: Install Rust
+      if: steps.latest_version.outputs.new_release == 'true'
+      name:run: |
+        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+
+    - name: Generate CAPI
+      if: steps.latest_version.outputs.new_release == 'true'
+      run: |
         cd wasmer-sources
         make build-capi
         make package-capi
 
     - name: Upload headers
-      if: steps.compare.outputs.new_release == 'true'
+      if: steps.latest_version.outputs.new_release == 'true'
       uses: ncipollo/release-action@v1
       with:
         artifacts: "wasmer-sources/package/include/*.h"
         commit: ${{ github.sha }}
-        tag: ${{ steps.check.outputs.tag }}
+        tag: ${{ steps.latest_version.outputs.version }}
         skipIfReleaseExists: true
-
-    - name: Commit changes
-      uses: EndBug/add-and-commit@v9 # You can change this to use a specific version.
-      with:
-        default_author: user_info
-        commit: --amend
-        push: --force
-        message: 'Update release info'
