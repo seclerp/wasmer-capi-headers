@@ -20,11 +20,11 @@ jobs:
       run: |
         LATEST_VERSION=$(curl --silent "https://api.github.com/repos/wasmerio/wasmer/releases/latest" | jq -r .tag_name)
         echo "version=$LATEST_VERSION" >> $GITHUB_OUTPUT
-        if git tag | grep -q "v$LATEST_VERSION$"; then
+        if git tag | grep -q "$LATEST_VERSION$"; then
           echo "We have already released this version. Exiting..."
-          echo "new_release=true" >> $GITHUB_OUTPUT
-        else
           echo "new_release=false" >> $GITHUB_OUTPUT
+        else
+          echo "new_release=true" >> $GITHUB_OUTPUT
         fi
 
     - name: Fetch wasmer source code
